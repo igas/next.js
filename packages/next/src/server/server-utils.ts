@@ -415,7 +415,8 @@ export function getServerUtils({
   }
 
   function normalizeQueryParams(
-    query: Record<string, string | string[] | undefined>
+    query: Record<string, string | string[] | undefined>,
+    routeParamKeys: Set<string>
   ) {
     // this is used to pass query information in rewrites
     // but should not be exposed in final query
@@ -428,6 +429,7 @@ export function getServerUtils({
       // Remove the prefixed key from the query params because we want
       // to consume it for the dynamic route matcher.
       delete query[key]
+      routeParamKeys.add(normalizedKey)
 
       if (typeof value === 'undefined') continue
 
@@ -437,11 +439,26 @@ export function getServerUtils({
     }
   }
 
+  function filterInternalQuery(
+    query: Record<string, undefined | string | string[]>
+  ) {
+    // this is used to pass query information in rewrites
+    // but should not be exposed in final query
+    delete query['nextInternalLocale']
+
+    for (const key in query) {
+      if (normalizeNextQueryParam(key)) {
+        delete query[key]
+      }
+    }
+  }
+
   return {
     handleRewrites,
     defaultRouteRegex,
     dynamicRouteMatcher,
     defaultRouteMatches,
+    filterInternalQuery,
     normalizeQueryParams,
     getParamsFromRouteMatches,
     /**
